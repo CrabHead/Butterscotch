@@ -24,12 +24,18 @@ int main(void) {
 
     XVideoSetMode(640, 480, 32, REFRESH_DEFAULT);
     glContextInit(640, 480);
-    NoopAudioSystem_create();
     
-    // Mount E: for saves, D: is mounted automatically by auto mount lib
+    // Mount E: for saves
     BOOL mountRet = nxMountDrive('E', "\\Device\\Harddisk0\\Partition1\\");
     if (!mountRet) {
         logInfo("Failed to mount E: drive!\n");
+        return 1;
+    }
+
+    // Mount E: for game data
+        BOOL mountRet = nxMountDrive('D', "\\Device\\Harddisk0\\Partition2\\");
+    if (!mountRet) {
+        logInfo("Failed to mount D: drive!\n");
         return 1;
     }
 
