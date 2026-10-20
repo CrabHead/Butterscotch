@@ -1,7 +1,11 @@
 #include <ctype.h>
 #include "stdio_compat.h"
 
+#if defined(PLATFORM_XBOX)
+#include <SDL.h>
+#else
 #include <SDL2/SDL.h>
+#endif
 
 #include "common.h"
 #include "input_recording.h"
@@ -13,12 +17,25 @@
 #include "switch_input.h"
 #endif
 
+#ifdef PLATFORM_XBOX
+void glFlipNV2A(void);
+#endif
+
 static Runner *g_runner;
 static SDL_Surface* scr;
 static SDL_Window *window;
 static SDL_GameController* openControllers[MAX_GAMEPADS];
 
 static SDL_Window *tryOpenWindow(int reqW, int reqH, const char* title, Uint32 flags) {
+    #ifdef PLATFORM_XBOX
+        return SDL_CreateWindow(
+            title,
+            SDL_WINDOWPOS_UNDEFINED,
+            SDL_WINDOWPOS_UNDEFINED,
+            reqW, reqH,
+            flags
+        );
+    #else
     if (gfx == SOFTWARE) {
         return SDL_CreateWindow(
             title,
@@ -92,6 +109,7 @@ static SDL_Window *tryOpenWindow(int reqW, int reqH, const char* title, Uint32 f
         }
     }
     return NULL;
+    #endif
 }
 
 void platformSetWindowTitle(const char* title) {
@@ -109,7 +127,7 @@ bool platformGetWindowSize(int32_t* outW, int32_t* outH) {
     } else {
         int w = 0;
         int h = 0;
-#if SDL_VERSION_ATLEAST(2, 0, 1)
+#if SDL_VERSION_ATLEAST(2, 0, 1) && !defined(PLATFORM_XBOX)
         SDL_GL_GetDrawableSize(window, &w, &h);
 #else
         SDL_GetWindowSize(window, &w, &h);
@@ -196,8 +214,10 @@ bool platformInit(int reqW, int reqH, const char *title, bool headless) {
     }
 
     Uint32 flags = 0;
+    #ifndef PLATFORM_XBOX
     if (gfx != SOFTWARE)
         flags |= SDL_WINDOW_OPENGL;
+    #endif
     if (headless)
         flags |= SDL_WINDOW_HIDDEN;
     else
@@ -234,7 +254,7 @@ bool platformInit(int reqW, int reqH, const char *title, bool headless) {
         return false;
     }
     if (gfx != SOFTWARE) {
-#ifndef PLATFORM_VITA
+#if !defined(PLATFORM_VITA) && !defined(PLATFORM_XBOX)
         SDL_GL_SetSwapInterval(0); // disable vsync
 #endif
     } else {
@@ -337,8 +357,13 @@ void platformSwapBuffers(void) {
     }
 #endif
 #if defined(ENABLE_LEGACY_GL) || defined(ENABLE_MODERN_GL)
-    if (gfx == LEGACY_GL || gfx == MODERN_GL)
+    if (gfx == LEGACY_GL || gfx == MODERN_GL) {
+#ifdef PLATFORM_XBOX
+        glFlipNV2A();
+#else
         SDL_GL_SwapWindow(window);
+#endif
+    }
 #endif
 }
 
