@@ -6,3 +6,6 @@ CMakeUserPresets.json
 compat/config.mk
 /.vs
 *.log
+*Zone.Identifier
+*.Zone.Identifier
+
